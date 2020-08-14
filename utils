@@ -1,0 +1,27 @@
+out() { printf "$1 $2\n" "${@:3}"; }
+error() { out "==> ERROR:" "$@"; } >&2
+warning() { out "==> WARNING:" "$@"; } >&2
+msg() { out "==>" "$@"; }
+msg2() { out "  ->" "$@";}
+die() { error "$@"; exit 1; }
+
+ignore_error() {
+  "$@" 2>/dev/null
+  return 0
+}
+
+in_array() {
+  local i
+  for i in "${@:2}"; do
+    [[ $1 = "$i" ]] && return 0
+  done
+  return 1
+}
+
+program_exists() {
+  if ! command -v $1 &> /dev/null; then
+    return 1
+  else
+    return 0
+  fi
+}

@@ -1,0 +1,65 @@
+#!/bin/bash
+
+m4_include(utils)
+
+usage() {
+  cat <<EOF
+usage: ${0##*/} image destination
+
+    -h                  Print this help message
+
+EOF
+}
+
+while getopts ':h' flag; do
+  case $flag in
+    h)
+      usage
+      exit 0
+      ;;
+    :)
+      die '%s: option requires an argument -- '\''%s'\' "${0##*/}" "$OPTARG"
+      ;;
+    ?)
+      die '%s: invalid option -- '\''%s'\' "${0##*/}" "$OPTARG"
+      ;;
+  esac
+done
+shift $(( OPTIND - 1 ))
+
+image=`realpath "$1"`
+destination=`realpath "$2"`
+compression=${image##*.}
+taropt=''
+case $compression
+  zst)
+  zstd)
+    taropt='--zstd'
+    ;;
+  bz2)
+  bzip2)
+    taropt='--bzip2'
+    ;;
+  xz)
+    taropt='--xz'
+    ;;
+  lz)
+    taropt='--lzip'
+    ;;
+  lzma)
+    taropt='--lzma'
+    ;;
+  lzop)
+    taropt='--lzop'
+    ;;
+  gz)
+    taropt='--gzip'
+    ;;
+esac
+
+(( EUID == 0 )) || die 'This script must be run with root privileges'
+
+previouspwd=$PWD
+cd $destination
+tar $taropt -xhf $output || die '%s: cannot extract archive to given destination' "${0##*/}"
+cd $previouspwd
