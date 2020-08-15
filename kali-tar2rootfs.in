@@ -27,17 +27,15 @@ while getopts ':h' flag; do
 done
 shift $(( OPTIND - 1 ))
 
-image=`realpath "$1"`
-destination=`realpath "$2"`
+image=$(realpath "$1")
+destination=$(realpath "$2")
 compression=${image##*.}
 taropt=''
-case $compression
-  zst)
-  zstd)
+case $compression in
+  zst | zstd)
     taropt='--zstd'
     ;;
-  bz2)
-  bzip2)
+  bz2 | bzip2)
     taropt='--bzip2'
     ;;
   xz)

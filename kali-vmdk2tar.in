@@ -33,23 +33,20 @@ while getopts ':hn:' flag; do
 done
 shift $(( OPTIND - 1 ))
 
-input=`realpath "$1"`
+input=$(realpath "$1" 2>/dev/null)
 input_extension="${input##*.}"
-output=`realpath "$2"`
+output=$(realpath "$2" 2>/dev/null)
 if [[ "$2" == "" ]]; then
   output=$(basename "$input" .$input_extension)
-  output="${output%.*}"
   output=$(dirname "$input")"/$output.tar.zst"
 fi
 compression=${output##*.}
 taropt=""
-case $compression
-  zst)
-  zstd)
+case $compression in
+  zst | zstd)
     taropt="--zstd"
     ;;
-  bz2)
-  bzip2)
+  bz2 | bzip2)
     taropt="--bzip2"
     ;;
   xz)
@@ -81,22 +78,30 @@ if lsmod | grep "nbd" &> /dev/null; then
   nbdloaded="n"
 else
   modprobe nbd || die "%s: cannot load nbd kernel module" "${0##*/}"
+  while [ ! -e "/dev/nbd0" ]; do
+    sleep 1
+  done
   nbdloaded="y"
 fi
 
 # https://stackoverflow.com/a/22608727
 for x in /sys/class/block/nbd* ; do
-  S=`cat $x/size`
+  S=$(cat $x/size)
   if [ "$S" == "0" ] ; then
-    block=`basename $x`
+    block=$(basename $x)
     break
   fi
 done
 
 # check for qemu-nbd
-program_exists qemu-nbd || || die "%s: this script depends on qemu-nbd, please install it before trying again" "${0##*/}"
+program_exists qemu-nbd || die "%s: this script depends on qemu-nbd, please install it before trying again" "${0##*/}"
 qemu-nbd -c "/dev/$block" "$input" || die "%s: cannot connect '%s' to '%s'" "${0##*/}" "${block}p${partition}" "$input"
-mountpoint=`mktemp -d vmdk2tar.XXXXXXXXX`
+# wait until partition becomes available
+while [ ! -e "/dev/${block}p${partition}" ]; do
+  sleep 1
+done
+
+mountpoint=$(mktemp -d /tmp/vmdk2tar.XXXXXXXXX)
 mount -t ext4 -o ro "/dev/${block}p${partition}" "$mountpoint" || die "%s: cannot mount '%s'" "${0##*/}" "${block}p${partition}"
 previouspwd=$PWD
 cd $mountpoint
