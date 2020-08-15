@@ -62,6 +62,7 @@ esac
 (( EUID == 0 )) || die 'This script must be run with root privileges'
 
 previouspwd=$PWD
+mkdir -p $destination
 cd $destination
 tar $taropt -xhf $image || die '%s: cannot extract archive to given destination' "${0##*/}"
 cd $previouspwd
