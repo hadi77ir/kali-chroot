@@ -27,8 +27,12 @@ while getopts ':h' flag; do
 done
 shift $(( OPTIND - 1 ))
 
-image=$(realpath "$1")
-destination=$(realpath "$2")
+if [ "$#" -ne 2 ]; then
+  die "%s: invalid parameters" "${0##*/}"
+fi
+
+image=$(realpath "$1" 2>/dev/null)
+destination=$(realpath "$2" 2>/dev/null)
 compression=${image##*.}
 taropt=''
 case $compression in
@@ -59,5 +63,5 @@ esac
 
 previouspwd=$PWD
 cd $destination
-tar $taropt -xhf $output || die '%s: cannot extract archive to given destination' "${0##*/}"
+tar $taropt -xhf $image || die '%s: cannot extract archive to given destination' "${0##*/}"
 cd $previouspwd

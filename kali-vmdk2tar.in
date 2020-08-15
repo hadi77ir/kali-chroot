@@ -33,6 +33,10 @@ while getopts ':hn:' flag; do
 done
 shift $(( OPTIND - 1 ))
 
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  die "%s: invalid parameters" "${0##*/}"
+fi
+
 input=$(realpath "$1" 2>/dev/null)
 input_extension="${input##*.}"
 output=$(realpath "$2" 2>/dev/null)
